@@ -1,0 +1,60 @@
+name: Build PSXFINALDOOM
+
+on:   [ push, pull_request ]
+
+env:
+  GDRIVE_ID: 0B_GAaDjR83rLZGVaZ2pvV2tjSVE
+  PSYQ: PSYQ_SDK.zip
+  PSYQ_PATH: C:\psyq
+
+jobs:
+
+  PSYQ-SDK:
+    name:    Install PSYQ SDK
+    runs-on: windows-latest
+
+    steps:
+      - name: Initialize toolchain cache
+        id:   _cache
+        uses: actions/cache@v1
+        with:
+          key:  ${{ env.PSYQ_PATH }}
+          path: C:\psyq
+
+      - name: Install gdowm
+        if:   ${{ steps._cache.outputs.cache-hit != 'true' }}
+        run: |
+          pip install gdown
+      - name: Download and extract PSYQ_SDK.zip
+        if:   ${{ steps._cache.outputs.cache-hit != 'true' }}
+        run: |
+         gdown ${{ env.GDRIVE_ID }}
+         7z x -y ${{ env.PSYQ }} -oC: psyq
+      - name: add CPE2X.EXE and cpe2x_gec.exe into psyq/bin folder
+        if:   ${{ steps._cache.outputs.cache-hit != 'true' }}
+        run: |
+          mv ${{ env.PSYQ_PATH }}\bin\CPE2X.EXE ${{ env.PSYQ_PATH }}\bin\CPE2X.EXE.old
+          curl -L -o ${{ env.PSYQ_PATH }}\bin\CPE2X.EXE https://github.com/Erick194/PSXFINALDOOM-RE/raw/master/PSYQ/CPE2X.EXE
+          curl -L -o ${{ env.PSYQ_PATH }}\bin\cpe2x_gec.exe https://github.com/Erick194/PSXFINALDOOM-RE/raw/master/PSYQ/cpe2x_gec.exe
+
+  build-PSXFINALDOOM-RE:
+    name: Build PSXDOOM
+    runs-on: windows-latest
+    needs: PSYQ-SDK
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Initialize toolchain cache
+        id:   _cache
+        uses: actions/cache@v1
+        with:
+          key:  ${{ env.PSYQ_PATH }}
+          path: C:\psyq
+
+      - name: build PSXFINALDOOM-RE
+        run: |
+         cd PSXDOOM
+         ./MAKEFILE.bat
+          
+
